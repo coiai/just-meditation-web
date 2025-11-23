@@ -326,11 +326,11 @@ export default function MeditationTimer() {
           {/* Ambient */}
           <Box sx={{ flex: 1 }}>
             <FormControl fullWidth size="small" disabled={isRunning}>
-              <InputLabel id="ambient-label">環境音</InputLabel>
+              <InputLabel id="ambient-label">Ambient Sound</InputLabel>
               <Select
                 labelId="ambient-label"
                 value={ambientId}
-                label="環境音"
+                label="Ambient Sound"
                 onChange={(e) =>
                   setAmbientId(e.target.value as any)
                 }
