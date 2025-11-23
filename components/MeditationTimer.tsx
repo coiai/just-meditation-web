@@ -15,7 +15,10 @@ import {
   Stack,
   LinearProgress,
   Divider,
+  Alert,
 } from "@mui/material";
+
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 type AmbientOption = {
   id: string;
@@ -38,6 +41,7 @@ function formatTime(sec: number) {
 }
 
 export default function MeditationTimer() {
+  const { supported, active, request, release } = useWakeLock();
   // 設定値
   const [durationMin, setDurationMin] = useState(10);
   const [bellIntervalMin, setBellIntervalMin] = useState(1);
@@ -107,6 +111,8 @@ export default function MeditationTimer() {
     setIsRunning(true);
     startAtRef.current = performance.now();
 
+    request();
+
     if (ambientAudioRef.current) {
       try {
         await ambientAudioRef.current.play();
@@ -117,6 +123,8 @@ export default function MeditationTimer() {
   const handlePause = () => {
     if (!isRunning) return;
     setIsRunning(false);
+
+    release();
 
     if (startAtRef.current != null) {
       pausedElapsedRef.current +=
@@ -134,6 +142,7 @@ export default function MeditationTimer() {
 
   const handleReset = () => {
     setIsRunning(false);
+    release();
     startAtRef.current = null;
     pausedElapsedRef.current = 0;
     setRemainingSec(durationMin * 60);

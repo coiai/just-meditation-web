@@ -40,7 +40,8 @@ export default function HamburgerMenu() {
           backdropFilter: "blur(8px)",
         }}
       >
-        <Toolbar sx={{ minHeight: 64 }}>
+        <Toolbar sx={{ minHeight: 64, display: "flex", gap: 1, justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
           <IconButton
             edge="start"
             onClick={toggle(true)}
@@ -53,6 +54,7 @@ export default function HamburgerMenu() {
           <Typography variant="subtitle1" fontWeight={600} letterSpacing={0.6}>
             Just Meditation
           </Typography>
+          </Box>
           <InstallPWAButton />
         </Toolbar>
       </AppBar>
