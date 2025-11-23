@@ -2,6 +2,20 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  Slider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Stack,
+  LinearProgress,
+  Divider,
+} from "@mui/material";
 
 type AmbientOption = {
   id: string;
@@ -10,10 +24,11 @@ type AmbientOption = {
 };
 
 const AMBIENTS: AmbientOption[] = [
-  { id: "silence", label: "無音" },
-  { id: "rain", label: "雨", src: "/sounds/rain.mp3" },
-  { id: "forest", label: "森", src: "/sounds/forest.mp3" },
-  { id: "waves", label: "波", src: "/sounds/waves.mp3" },
+  { id: "silence", label: "silence" },
+  { id: "rain", label: "rain", src: "/sounds/rain.mp3" },
+  { id: "forest", label: "forest", src: "/sounds/forest.mp3" },
+  { id: "waves", label: "waves", src: "/sounds/waves.mp3" },
+  { id: "white_noise", label: "white noise", src: "/sounds/stream.mp3" },
 ];
 
 function formatTime(sec: number) {
@@ -26,7 +41,8 @@ export default function MeditationTimer() {
   // 設定値
   const [durationMin, setDurationMin] = useState(10);
   const [bellIntervalMin, setBellIntervalMin] = useState(1);
-  const [ambientId, setAmbientId] = useState<AMBIENTS[number]["id"]>("silence");
+  const [ambientId, setAmbientId] =
+    useState<(typeof AMBIENTS)[number]["id"]>("silence");
 
   // セッション状態
   const [isRunning, setIsRunning] = useState(false);
@@ -55,10 +71,10 @@ export default function MeditationTimer() {
     }
   }, [durationMin, isRunning]);
 
-  // ベル＆環境音の Audio 初期化（client only）
+  // ベル Audio 初期化
   useEffect(() => {
     if (!bellAudioRef.current) {
-      const a = new Audio("/sounds/bell.mp3");
+      const a = new Audio("/sounds/temple_bell.mp3");
       a.preload = "auto";
       bellAudioRef.current = a;
     }
@@ -66,7 +82,6 @@ export default function MeditationTimer() {
 
   // 環境音の切替
   useEffect(() => {
-    // 既存停止
     if (ambientAudioRef.current) {
       ambientAudioRef.current.pause();
       ambientAudioRef.current.currentTime = 0;
@@ -79,12 +94,11 @@ export default function MeditationTimer() {
       a.preload = "auto";
       ambientAudioRef.current = a;
 
-      // 実行中なら即再生（※自動再生制限があるので失敗は黙ってOK）
       if (isRunning) {
         a.play().catch(() => {});
       }
     }
-  }, [ambientOption.src]); // ambientId change
+  }, [ambientOption.src]);
 
   // Start / Pause / Reset
   const handleStart = async () => {
@@ -93,31 +107,25 @@ export default function MeditationTimer() {
     setIsRunning(true);
     startAtRef.current = performance.now();
 
-    // 環境音再生（ユーザー操作内なので通りやすい）
     if (ambientAudioRef.current) {
       try {
         await ambientAudioRef.current.play();
-      } catch {
-        // iOSなどで失敗しても無視
-      }
+      } catch {}
     }
   };
 
   const handlePause = () => {
     if (!isRunning) return;
-
     setIsRunning(false);
 
-    // 経過時間を保存
     if (startAtRef.current != null) {
-      pausedElapsedRef.current += (performance.now() - startAtRef.current) / 1000;
+      pausedElapsedRef.current +=
+        (performance.now() - startAtRef.current) / 1000;
       startAtRef.current = null;
     }
 
-    // 環境音停止
     ambientAudioRef.current?.pause();
 
-    // raf停止
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -146,7 +154,9 @@ export default function MeditationTimer() {
     const totalSec = durationMin * 60;
     const bellEverySec = Math.max(1, Math.floor(bellIntervalMin * 60));
 
-    let lastBellIndex = Math.floor(pausedElapsedRef.current / bellEverySec);
+    let lastBellIndex = Math.floor(
+      pausedElapsedRef.current / bellEverySec
+    );
 
     const tick = () => {
       if (!isRunning) return;
@@ -154,16 +164,16 @@ export default function MeditationTimer() {
       const now = performance.now();
       const elapsed =
         pausedElapsedRef.current +
-        (startAtRef.current ? (now - startAtRef.current) / 1000 : 0);
+        (startAtRef.current
+          ? (now - startAtRef.current) / 1000
+          : 0);
 
       const remain = Math.max(0, Math.ceil(totalSec - elapsed));
       setRemainingSec(remain);
 
-      // ベル判定：intervalごとに1回
       const bellIndex = Math.floor(elapsed / bellEverySec);
       if (bellIndex > lastBellIndex && elapsed < totalSec) {
         lastBellIndex = bellIndex;
-        // 鐘を鳴らす
         const bell = bellAudioRef.current;
         if (bell) {
           bell.currentTime = 0;
@@ -171,9 +181,7 @@ export default function MeditationTimer() {
         }
       }
 
-      // 終了
       if (elapsed >= totalSec) {
-        // 最後にもベル鳴らしたいならここで鳴らす
         const bell = bellAudioRef.current;
         if (bell) {
           bell.currentTime = 0;
@@ -202,102 +210,181 @@ export default function MeditationTimer() {
     1 - remainingSec / Math.max(1, durationMin * 60);
 
   return (
-    <div className="w-full max-w-xl bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 shadow-lg">
-      <h1 className="text-2xl font-semibold mb-4">Just Meditation</h1>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        px: 2,
+        bgcolor: "background.default",
+      }}
+    >
+      <Paper
+        elevation={8}
+        sx={{
+          width: "100%",
+          maxWidth: 640,
+          p: { xs: 3, sm: 4 },
+          borderRadius: 4,
+          backdropFilter: "blur(6px)",
+        }}
+      >
+        {/* Header */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" fontWeight={600} letterSpacing={0.5}>
+            Just Meditation
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Session
+          </Typography>
+        </Stack>
 
-      {/* Timer display */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-5xl font-mono tracking-wider">
-          {formatTime(remainingSec)}
-        </div>
-        <div className="text-sm text-neutral-400">
-          残り時間
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden mb-6">
-        <div
-          className="h-full bg-neutral-100 transition-all"
-          style={{ width: `${progress * 100}%` }}
-        />
-      </div>
-
-      {/* Settings */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-300">総時間（分）</span>
-          <input
-            type="number"
-            min={1}
-            max={180}
-            value={durationMin}
-            disabled={isRunning}
-            onChange={(e) => setDurationMin(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-300">鐘の間隔（分）</span>
-          <input
-            type="number"
-            min={0.25}
-            step={0.25}
-            max={60}
-            value={bellIntervalMin}
-            disabled={isRunning}
-            onChange={(e) => setBellIntervalMin(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-300">環境音</span>
-          <select
-            value={ambientId}
-            disabled={isRunning}
-            onChange={(e) => setAmbientId(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800"
-          >
-            {AMBIENTS.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {/* Controls */}
-      <div className="flex gap-3">
-        {!isRunning ? (
-          <button
-            onClick={handleStart}
-            className="flex-1 py-3 rounded-xl bg-white text-black font-medium hover:bg-neutral-200 transition"
-          >
-            Start
-          </button>
-        ) : (
-          <button
-            onClick={handlePause}
-            className="flex-1 py-3 rounded-xl bg-neutral-200 text-black font-medium hover:bg-neutral-300 transition"
-          >
-            Pause
-          </button>
-        )}
-
-        <button
-          onClick={handleReset}
-          className="px-5 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 transition"
+        {/* Timer */}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-end"
+          sx={{ mt: 3 }}
         >
-          Reset
-        </button>
-      </div>
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              letterSpacing: "0.08em",
+            }}
+          >
+            {formatTime(remainingSec)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ pb: 1 }}>
+            Remaining Time
+          </Typography>
+        </Stack>
 
-      <p className="text-xs text-neutral-400 mt-4">
-        ※ iOS/Safari は自動再生制限があるため、Start後に音が鳴らない場合は一度Pause→Startで再試行してください。
-      </p>
-    </div>
+        {/* Progress */}
+        <Box sx={{ mt: 2 }}>
+          <LinearProgress
+            variant="determinate"
+            value={progress * 100}
+            sx={{
+              height: 8,
+              borderRadius: 999,
+              bgcolor: "rgba(255,255,255,0.08)",
+              "& .MuiLinearProgress-bar": {
+                borderRadius: 999,
+              },
+            }}
+          />
+        </Box>
+
+        <Divider sx={{ my: 3, opacity: 0.2 }} />
+
+        {/* Settings */}
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={3}
+        >
+          {/* Duration */}
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Total Duration (min)
+            </Typography>
+            <Slider
+              value={durationMin}
+              onChange={(_, v) => setDurationMin(v as number)}
+              min={1}
+              max={180}
+              step={1}
+              disabled={isRunning}
+              valueLabelDisplay="auto"
+              sx={{ mt: 1 }}
+            />
+            <Typography variant="body2" sx={{ mt: -0.5 }}>
+              {durationMin} min
+            </Typography>
+          </Box>
+
+          {/* Bell interval */}
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Bell Interval (min)
+            </Typography>
+            <Slider
+              value={bellIntervalMin}
+              onChange={(_, v) => setBellIntervalMin(v as number)}
+              min={0}
+              max={60}
+              step={1}
+              disabled={isRunning}
+              valueLabelDisplay="auto"
+              sx={{ mt: 1 }}
+            />
+            <Typography variant="body2" sx={{ mt: -0.5 }}>
+              {bellIntervalMin} min
+            </Typography>
+          </Box>
+
+          {/* Ambient */}
+          <Box sx={{ flex: 1 }}>
+            <FormControl fullWidth size="small" disabled={isRunning}>
+              <InputLabel id="ambient-label">環境音</InputLabel>
+              <Select
+                labelId="ambient-label"
+                value={ambientId}
+                label="環境音"
+                onChange={(e) =>
+                  setAmbientId(e.target.value as any)
+                }
+              >
+                {AMBIENTS.map((a) => (
+                  <MenuItem key={a.id} value={a.id}>
+                    {a.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Stack>
+
+        {/* Controls */}
+        <Stack direction="row" spacing={1.5} sx={{ mt: 4 }}>
+          {!isRunning ? (
+            <Button
+              fullWidth
+              size="large"
+              variant="contained"
+              onClick={handleStart}
+              sx={{ py: 1.4, borderRadius: 3 }}
+            >
+              Start
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              size="large"
+              variant="contained"
+              color="secondary"
+              onClick={handlePause}
+              sx={{ py: 1.4, borderRadius: 3 }}
+            >
+              Pause
+            </Button>
+          )}
+
+          <Button
+            size="large"
+            variant="outlined"
+            onClick={handleReset}
+            sx={{ px: 3.5, borderRadius: 3 }}
+          >
+            Reset
+          </Button>
+        </Stack>
+
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
+          ※ iOS/Safari may block autoplay.
+          If the sound doesn’t play after tapping Start, please try Pause → Start again.
+        </Typography>
+      </Paper>
+    </Box>
   );
 }
