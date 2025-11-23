@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import InstallPWAButton from "./InstallPWAButton";
 import Link from "next/link";
 import {
   AppBar,
@@ -52,6 +53,7 @@ export default function HamburgerMenu() {
           <Typography variant="subtitle1" fontWeight={600} letterSpacing={0.6}>
             Just Meditation
           </Typography>
+          <InstallPWAButton />
         </Toolbar>
       </AppBar>
 
