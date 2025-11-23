@@ -1,36 +1,40 @@
-// app/sw.ts
-import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry } from "serwist";
-import { Serwist } from "serwist";
+/// <reference lib="webworker" />
 
-// Next.js build 時に注入される precache manifest
-declare const self: ServiceWorkerGlobalScope & {
-  __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
-};
+import { defaultCache } from "@serwist/next/worker";
+import {
+  Serwist,
+  CacheFirst,
+  type PrecacheEntry,
+  type SerwistGlobalConfig,
+  type RuntimeCaching,
+} from "serwist";
+
+// Next.js がビルド時に注入する precache manifest の型
+declare global {
+  interface WorkerGlobalScope extends SerwistGlobalConfig {
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
+}
+declare const self: ServiceWorkerGlobalScope;
+
+// 追加したいランタイムキャッシュ（音源など）
+const extraRuntimeCaching: RuntimeCaching[] = [
+  {
+    matcher: ({ request }) => request.destination === "audio",
+    handler: new CacheFirst({
+      cacheName: "audio-cache",
+    }),
+  },
+];
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
+  navigationPreload: true,
 
-  runtimeCaching: [
-    // 画像はおすすめの defaultCache（実体は CacheFirst / SWR などのセット）
-    {
-      matcher: ({ request }) => request.destination === "image",
-      handler: defaultCache,
-    },
-
-    // MP3など音源もオフラインで鳴らしたい場合
-    {
-      matcher: ({ request }) => request.destination === "audio",
-      handler: defaultCache,
-    },
-
-    // fonts / css / js を手厚くしたいなら追加でOK
-    // { matcher: ({ request }) => request.destination === "style", handler: defaultCache },
-    // { matcher: ({ request }) => request.destination === "script", handler: defaultCache },
-    // { matcher: ({ request }) => request.destination === "font", handler: defaultCache },
-  ],
+  // ✅ defaultCache を「配列として」渡すのが正解
+  runtimeCaching: [...defaultCache, ...extraRuntimeCaching],
 });
 
 serwist.addEventListeners();
