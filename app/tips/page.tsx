@@ -1,5 +1,4 @@
 // app/tips/page.tsx
-"use client";
 
 import {
   Box,
@@ -10,6 +9,17 @@ import {
   Chip,
   Divider,
 } from "@mui/material";
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Tips",
+  description:
+    "Short, practical meditation tips for calmer and more consistent sessions.",
+  alternates: {
+    canonical: "/tips",
+  },
+};
 
 type Tip = {
   title: string;
