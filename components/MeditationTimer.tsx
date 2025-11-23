@@ -24,10 +24,11 @@ type AmbientOption = {
 };
 
 const AMBIENTS: AmbientOption[] = [
-  { id: "silence", label: "無音" },
-  { id: "rain", label: "雨", src: "/sounds/rain.mp3" },
-  { id: "forest", label: "森", src: "/sounds/forest.mp3" },
-  { id: "waves", label: "波", src: "/sounds/waves.mp3" },
+  { id: "silence", label: "silence" },
+  { id: "rain", label: "rain", src: "/sounds/rain.mp3" },
+  { id: "forest", label: "forest", src: "/sounds/forest.mp3" },
+  { id: "waves", label: "waves", src: "/sounds/waves.mp3" },
+  { id: "white_noise", label: "white noise", src: "/sounds/stream.mp3" },
 ];
 
 function formatTime(sec: number) {
@@ -73,7 +74,7 @@ export default function MeditationTimer() {
   // ベル Audio 初期化
   useEffect(() => {
     if (!bellAudioRef.current) {
-      const a = new Audio("/sounds/bell.mp3");
+      const a = new Audio("/sounds/temple_bell.mp3");
       a.preload = "auto";
       bellAudioRef.current = a;
     }
@@ -255,7 +256,7 @@ export default function MeditationTimer() {
             {formatTime(remainingSec)}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ pb: 1 }}>
-            残り時間
+            Remaining Time
           </Typography>
         </Stack>
 
@@ -285,7 +286,7 @@ export default function MeditationTimer() {
           {/* Duration */}
           <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.secondary">
-              総時間（分）
+              Total Duration (min)
             </Typography>
             <Slider
               value={durationMin}
@@ -305,7 +306,7 @@ export default function MeditationTimer() {
           {/* Bell interval */}
           <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.secondary">
-              鐘の間隔（分）
+              Bell Interval (min)
             </Typography>
             <Slider
               value={bellIntervalMin}
@@ -380,8 +381,8 @@ export default function MeditationTimer() {
         </Stack>
 
         <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
-          ※ iOS/Safari は自動再生制限があるため、Start後に音が鳴らない場合は
-          Pause→Startで再試行してください。
+          ※ iOS/Safari may block autoplay.
+          If the sound doesn’t play after tapping Start, please try Pause → Start again.
         </Typography>
       </Paper>
     </Box>
